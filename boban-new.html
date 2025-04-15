@@ -109,6 +109,9 @@
     <p id="success">✅ Check-in successful!</p>
   </div>
 
+  <!-- UAParser.js -->
+  <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@1.0.2/src/ua-parser.min.js"></script>
+
   <script>
     const guardSelect = document.getElementById("guard");
     const locationSelect = document.getElementById("location");
@@ -116,7 +119,7 @@
     const statusText = document.getElementById("status");
     const successMessage = document.getElementById("success");
 
-    // Function to check if form is ready for submission
+    // Enable button when both selections are made
     function checkFormReady() {
       submitBtn.disabled = !(guardSelect.value && locationSelect.value);
     }
@@ -124,7 +127,6 @@
     guardSelect.addEventListener("change", checkFormReady);
     locationSelect.addEventListener("change", checkFormReady);
 
-    // Capture user agent and submit form with this data
     submitBtn.addEventListener("click", () => {
       const guard = guardSelect.value;
       const location = locationSelect.value;
@@ -132,10 +134,18 @@
       if (guard && location) {
         statusText.textContent = "Submitting check-in...";
 
+        const parser = new UAParser();
+        const result = parser.getResult();
+        const deviceInfo = `
+Device: ${result.device.vendor || "Unknown"} ${result.device.model || ""}
+OS: ${result.os.name} ${result.os.version}
+Browser: ${result.browser.name} ${result.browser.version}
+        `.trim();
+
         const formData = new FormData();
-        formData.append("entry.241709823", guard);       // Guard field
-        formData.append("entry.611889337", location);    // Location field
-        formData.append("entry.1440119737", navigator.userAgent);  // User Agent field
+        formData.append("entry.241709823", guard);        // Guard Name
+        formData.append("entry.611889337", location);     // Location
+        formData.append("entry.1440119737", deviceInfo); // Replace with your actual Device Info field ID
 
         fetch("https://docs.google.com/forms/d/e/1FAIpQLSeQmDcg7L9kyYH8LpY3yAjfTpPFF-ciGbkBz_Lkutz7VC-DEg/formResponse", {
           method: "POST",
