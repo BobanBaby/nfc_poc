@@ -5,22 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Security Check-In</title>
   <style>
-    :root {
-      --primary-color: #2c3e50;
-      --accent-color: #27ae60;
-      --bg-color: #f9f9f9;
-      --text-color: #333;
-    }
-
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: var(--bg-color);
-      margin: 0;
-      padding: 0;
+      background-color: #f9f9f9;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
+      margin: 0;
     }
 
     .container {
@@ -28,13 +20,13 @@
       padding: 30px;
       border-radius: 16px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      text-align: center;
       width: 90%;
       max-width: 400px;
+      text-align: center;
     }
 
     h2 {
-      color: var(--primary-color);
+      color: #2c3e50;
       margin-bottom: 20px;
     }
 
@@ -46,40 +38,28 @@
       font-size: 16px;
     }
 
-    select {
-      border: 1px solid #ccc;
-    }
-
     button {
-      background-color: var(--accent-color);
+      background-color: #27ae60;
       color: white;
       border: none;
       cursor: pointer;
-      transition: background-color 0.3s ease;
     }
 
     button:disabled {
       background-color: #ccc;
-      cursor: not-allowed;
     }
 
     #status {
-      color: #555;
       margin-top: 20px;
+      color: #555;
     }
 
     #success {
       display: none;
-      color: var(--accent-color);
+      color: #27ae60;
+      font-weight: bold;
       font-size: 20px;
       margin-top: 20px;
-      font-weight: bold;
-      animation: fadeIn 1s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -95,71 +75,61 @@
       <option value="Manu">Manu</option>
     </select>
 
-    <label for="location">Location</label>
-    <select id="location">
-      <option value="">-- Select Location --</option>
-      <option value="Store Room">Store Room</option>
-      <option value="Main Gate">Main Gate</option>
-      <option value="Warehouse">Warehouse</option>
-    </select>
-
     <button id="submitBtn" disabled>✅ Check In</button>
 
     <p id="status"></p>
     <p id="success">✅ Check-in successful!</p>
   </div>
 
-  <!-- UAParser.js -->
+  <!-- UAParser -->
   <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@1.0.2/src/ua-parser.min.js"></script>
 
   <script>
     const guardSelect = document.getElementById("guard");
-    const locationSelect = document.getElementById("location");
     const submitBtn = document.getElementById("submitBtn");
     const statusText = document.getElementById("status");
     const successMessage = document.getElementById("success");
 
-    // Enable button when both selections are made
-    function checkFormReady() {
-      submitBtn.disabled = !(guardSelect.value && locationSelect.value);
-    }
+    // Extract location from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const locationValue = urlParams.get("location") || "Unknown";
 
-    guardSelect.addEventListener("change", checkFormReady);
-    locationSelect.addEventListener("change", checkFormReady);
+    guardSelect.addEventListener("change", () => {
+      submitBtn.disabled = !guardSelect.value;
+    });
 
     submitBtn.addEventListener("click", () => {
       const guard = guardSelect.value;
-      const location = locationSelect.value;
 
-      if (guard && location) {
-        statusText.textContent = "Submitting check-in...";
+      if (!guard) return;
 
-        const parser = new UAParser();
-        const result = parser.getResult();
-        const deviceInfo = `
+      statusText.textContent = "Submitting...";
+
+      const parser = new UAParser();
+      const result = parser.getResult();
+      const deviceInfo = `
 Device: ${result.device.vendor || "Unknown"} ${result.device.model || ""}
 OS: ${result.os.name} ${result.os.version}
 Browser: ${result.browser.name} ${result.browser.version}
-        `.trim();
+      `.trim();
 
-        const formData = new FormData();
-        formData.append("entry.241709823", guard);        // Guard Name
-        formData.append("entry.611889337", location);     // Location
-        formData.append("entry.1440119737", deviceInfo); // Replace with your actual Device Info field ID
+      const formData = new FormData();
+      formData.append("entry.241709823", guard);         // Guard Name
+      formData.append("entry.611889337", locationValue); // Location from URL
+      formData.append("entry.YOUR_DEVICE_FIELD_ID", deviceInfo); // Device Info
 
-        fetch("https://docs.google.com/forms/d/e/1FAIpQLSeQmDcg7L9kyYH8LpY3yAjfTpPFF-ciGbkBz_Lkutz7VC-DEg/formResponse", {
-          method: "POST",
-          mode: "no-cors",
-          body: formData
-        }).then(() => {
-          statusText.style.display = "none";
-          successMessage.style.display = "block";
-          submitBtn.disabled = true;
-        }).catch((error) => {
-          statusText.textContent = "Error during check-in.";
-          console.error("Submission failed", error);
-        });
-      }
+      fetch("https://docs.google.com/forms/d/e/1FAIpQLSeQmDcg7L9kyYH8LpY3yAjfTpPFF-ciGbkBz_Lkutz7VC-DEg/formResponse", {
+        method: "POST",
+        mode: "no-cors",
+        body: formData
+      }).then(() => {
+        statusText.style.display = "none";
+        successMessage.style.display = "block";
+        submitBtn.disabled = true;
+      }).catch((err) => {
+        statusText.textContent = "Error during submission";
+        console.error(err);
+      });
     });
   </script>
 </body>
