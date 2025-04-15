@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Check-In</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 50px;
+    }
+    .message {
+      font-size: 24px;
+      color: green;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <p id="status">Submitting your check-in...</p>
+  <p class="message" id="success">✅ Check-in successful!</p>
+
+  <script>
+    function autoSubmit() {
+      const formData = new FormData();
+      formData.append("entry.123456", "G001");  // Guard ID
+      formData.append("entry.456789", "Gate A"); // Location
+
+      fetch("https://docs.google.com/forms/d/e/FORM_ID/formResponse", {
+        method: "POST",
+        mode: "no-cors",
+        body: formData
+      }).then(() => {
+        document.getElementById("status").style.display = "none";
+        document.getElementById("success").style.display = "block";
+      }).catch((error) => {
+        document.getElementById("status").innerText = "Error during check-in.";
+        console.error("Submission failed", error);
+      });
+    }
+
+    window.onload = autoSubmit;
+  </script>
+</body>
+</html>
