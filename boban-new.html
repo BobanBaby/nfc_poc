@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Security Check-In</title>
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --accent-color: #27ae60;
+      --bg-color: #f9f9f9;
+      --text-color: #333;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    h2 {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    #status {
+      color: #555;
+      margin-top: 20px;
+    }
+
+    #success {
+      display: none;
+      color: var(--accent-color);
+      font-size: 20px;
+      margin-top: 20px;
+      font-weight: bold;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Security Check-In</h2>
+
+    <label for="guard">Guard Name</label>
+    <select id="guard">
+      <option value="">-- Select Guard --</option>
+      <option value="Boban">Boban</option>
+      <option value="Alex">Alex</option>
+      <option value="Manu">Manu</option>
+    </select>
+
+    <label for="location">Location</label>
+    <select id="location">
+      <option value="">-- Select Location --</option>
+      <option value="Store Room">Store Room</option>
+      <option value="Main Gate">Main Gate</option>
+      <option value="Warehouse">Warehouse</option>
+    </select>
+
+    <p id="status"></p>
+    <p id="success">✅ Check-in successful!</p>
+  </div>
+
+  <script>
+    const guardSelect = document.getElementById("guard");
+    const locationSelect = document.getElementById("location");
+    const statusText = document.getElementById("status");
+    const successMessage = document.getElementById("success");
+
+    function trySubmit() {
+      const guard = guardSelect.value;
+      const location = locationSelect.value;
+
+      if (guard && location) {
+        statusText.textContent = "Submitting check-in...";
+
+        const formData = new FormData();
+        formData.append("entry.241709823", guard);       // Guard field
+        formData.append("entry.611889337", location);    // Location field
+
+        fetch("https://docs.google.com/forms/d/e/1FAIpQLSeQmDcg7L9kyYH8LpY3yAjfTpPFF-ciGbkBz_Lkutz7VC-DEg/formResponse", {
+          method: "POST",
+          mode: "no-cors",
+          body: formData
+        }).then(() => {
+          statusText.style.display = "none";
+          successMessage.style.display = "block";
+        }).catch((error) => {
+          statusText.textContent = "Error during check-in.";
+          console.error("Submission failed", error);
+        });
+      }
+    }
+
+    guardSelect.addEventListener("change", trySubmit);
+    locationSelect.addEventListener("change", trySubmit);
+  </script>
+</body>
+</html>
