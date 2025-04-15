@@ -84,11 +84,15 @@
   <!-- UAParser -->
   <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@1.0.2/src/ua-parser.min.js"></script>
 
+  <!-- Sound Feedback -->
+  <audio id="successSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
+
   <script>
     const guardSelect = document.getElementById("guard");
     const submitBtn = document.getElementById("submitBtn");
     const statusText = document.getElementById("status");
     const successMessage = document.getElementById("success");
+    const successSound = document.getElementById("successSound");
 
     // Extract location from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -100,7 +104,6 @@
 
     submitBtn.addEventListener("click", () => {
       const guard = guardSelect.value;
-
       if (!guard) return;
 
       statusText.textContent = "Submitting...";
@@ -116,7 +119,7 @@ Browser: ${result.browser.name} ${result.browser.version}
       const formData = new FormData();
       formData.append("entry.241709823", guard);         // Guard Name
       formData.append("entry.611889337", locationValue); // Location from URL
-      formData.append("entry.1440119737", deviceInfo); // Device Info
+      formData.append("entry.1440119737", deviceInfo); // Replace this ID
 
       fetch("https://docs.google.com/forms/d/e/1FAIpQLSeQmDcg7L9kyYH8LpY3yAjfTpPFF-ciGbkBz_Lkutz7VC-DEg/formResponse", {
         method: "POST",
@@ -126,6 +129,14 @@ Browser: ${result.browser.name} ${result.browser.version}
         statusText.style.display = "none";
         successMessage.style.display = "block";
         submitBtn.disabled = true;
+        successSound.play();
+
+        setTimeout(() => {
+          guardSelect.value = "";
+          submitBtn.disabled = true;
+          successMessage.style.display = "none";
+          statusText.textContent = "";
+        }, 3000);
       }).catch((err) => {
         statusText.textContent = "Error during submission";
         console.error(err);
