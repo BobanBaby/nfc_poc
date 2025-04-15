@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f9f9f9;
+      background-color: #f0f4f8;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -49,11 +49,6 @@
       background-color: #ccc;
     }
 
-    #status {
-      margin-top: 20px;
-      color: #555;
-    }
-
     #success {
       display: none;
       color: #27ae60;
@@ -66,37 +61,50 @@
 <body>
   <div class="container">
     <h2>Security Check-In</h2>
-
-    <label for="guard">Guard Name</label>
+    <label for="guard">Select Guard</label>
     <select id="guard">
-      <option value="">-- Select Guard --</option>
-      <option value="Boban">Boban</option>
-      <option value="Alex">Alex</option>
-      <option value="Manu">Manu</option>
+      <option value="">-- Loading guards... --</option>
     </select>
-
     <button id="submitBtn" disabled>✅ Check In</button>
-
-    <p id="status"></p>
     <p id="success">✅ Check-in successful!</p>
   </div>
 
-  <!-- UAParser -->
+  <!-- UAParser for device info -->
   <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@1.0.2/src/ua-parser.min.js"></script>
-
-  <!-- Sound Feedback -->
+  <!-- Sound -->
   <audio id="successSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
 
   <script>
     const guardSelect = document.getElementById("guard");
     const submitBtn = document.getElementById("submitBtn");
-    const statusText = document.getElementById("status");
     const successMessage = document.getElementById("success");
     const successSound = document.getElementById("successSound");
 
-    // Extract location from URL
+    const sheetURL = "https://opensheet.elk.sh/1lMapu5UX3gpvXfvWSDi7KmUd71CQnVVwbPrOuROzbOg/Sheet1"; // <-- Replace with your Sheet ID
+    const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSeQmDcg7L9kyYH8LpY3yAjfTpPFF-ciGbkBz_Lkutz7VC-DEg/formResponse"; // <-- Replace with your Form ID
+    const guardField = "entry.241709823";  // <-- Replace with Guard name field ID
+    const locationField = "entry.611889337"; // <-- Replace with Location field ID
+    const deviceField = "entry.1440119737"; // <-- Replace with Device info field ID
+
     const urlParams = new URLSearchParams(window.location.search);
     const locationValue = urlParams.get("location") || "Unknown";
+
+    fetch(sheetURL)
+      .then(res => res.json())
+      .then(data => {
+        guardSelect.innerHTML = '<option value="">-- Select Guard --</option>';
+        data.forEach(row => {
+          if (row["Guard Name"]) {
+            const option = document.createElement("option");
+            option.value = row["Guard Name"];
+            option.textContent = row["Guard Name"];
+            guardSelect.appendChild(option);
+          }
+        });
+      }).catch(err => {
+        guardSelect.innerHTML = '<option value="">Error loading guards</option>';
+        console.error(err);
+      });
 
     guardSelect.addEventListener("change", () => {
       submitBtn.disabled = !guardSelect.value;
@@ -104,42 +112,34 @@
 
     submitBtn.addEventListener("click", () => {
       const guard = guardSelect.value;
-      if (!guard) return;
-
-      statusText.textContent = "Submitting...";
-
       const parser = new UAParser();
       const result = parser.getResult();
+
       const deviceInfo = `
 Device: ${result.device.vendor || "Unknown"} ${result.device.model || ""}
-OS: ${result.os.name} ${result.os.version}
-Browser: ${result.browser.name} ${result.browser.version}
-      `.trim();
+OS: ${result.os.name || ""} ${result.os.version || ""}
+Browser: ${result.browser.name || ""} ${result.browser.version || ""}
+`.trim();
 
       const formData = new FormData();
-      formData.append("entry.241709823", guard);         // Guard Name
-      formData.append("entry.611889337", locationValue); // Location from URL
-      formData.append("entry.1440119737", deviceInfo); // Replace this ID
+      formData.append(guardField, guard);
+      formData.append(locationField, locationValue);
+      formData.append(deviceField, deviceInfo);
 
-      fetch("https://docs.google.com/forms/d/e/1FAIpQLSeQmDcg7L9kyYH8LpY3yAjfTpPFF-ciGbkBz_Lkutz7VC-DEg/formResponse", {
+      fetch(formURL, {
         method: "POST",
         mode: "no-cors",
         body: formData
       }).then(() => {
-        statusText.style.display = "none";
-        successMessage.style.display = "block";
         submitBtn.disabled = true;
+        successMessage.style.display = "block";
         successSound.play();
 
         setTimeout(() => {
           guardSelect.value = "";
           submitBtn.disabled = true;
           successMessage.style.display = "none";
-          statusText.textContent = "";
         }, 3000);
-      }).catch((err) => {
-        statusText.textContent = "Error during submission";
-        console.error(err);
       });
     });
   </script>
